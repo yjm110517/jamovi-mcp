@@ -38,6 +38,14 @@
 - MCP 客户端能调用 `uvx`
 - `uvx` 或你的本地 Python 环境能使用 Python 3.12+
 
+`uvx` 是 [uv](https://docs.astral.sh/uv/) 提供的 Python 工具运行命令。这里使用 `uvx` 的目的，是让 MCP 客户端可以直接从 GitHub 下载并运行 `jamovi-mcp`，不用 clone 仓库，也不用写死本机 Python 路径。
+
+Windows 上可以这样安装 `uv`：
+
+```powershell
+winget install astral-sh.uv
+```
+
 jamovi 是必要条件，因为这个 MCP 会启动本地 jamovi engine。Python 不需要安装在任何固定目录。
 
 ## jamovi 版本发现
@@ -221,7 +229,13 @@ flowchart LR
 
 ### 找不到 `uvx`
 
-请安装 `uv`，让 MCP 客户端可以调用 `uvx`，然后重启 MCP 客户端。如果你不想使用 `uvx`，可以使用下面的开发安装方式，并在 MCP 客户端中配置已安装的 `jamovi-mcp` 命令。
+请安装 `uv`，让 MCP 客户端可以调用 `uvx`，然后重启 MCP 客户端：
+
+```powershell
+winget install astral-sh.uv
+```
+
+`uvx` 的意思是“通过 uv 临时运行一个 Python 工具”。如果你不想使用 `uvx`，可以使用下面的开发安装方式，并在 MCP 客户端中配置已安装的 `jamovi-mcp` 命令。
 
 ### `jamovi-mcp requires Python 3.12 or newer`
 
