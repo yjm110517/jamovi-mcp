@@ -2,6 +2,7 @@
 name = "jamovi-mcp"
 version = "0.1.0"
 description = "MCP server for jamovi statistical analysis software"
+readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
 dependencies = [
@@ -11,6 +12,11 @@ dependencies = [
     "aiohttp>=3.9",
     "pyyaml>=6.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/yjm110517/jamovi-mcp"
+Repository = "https://github.com/yjm110517/jamovi-mcp"
+Issues = "https://github.com/yjm110517/jamovi-mcp/issues"
 
 [project.scripts]
 jamovi-mcp = "jamovi_mcp.__main__:main"
