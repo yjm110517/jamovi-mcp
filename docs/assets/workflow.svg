@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">jamovi MCP workflow</title>
+  <desc id="desc">A bilingual workflow showing open data, inspect schema, read and edit cells, run an analysis, and save an OMV file.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f1f5f9"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#0f172a" flood-opacity="0.09"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#0f766e"/>
+    </marker>
+    <style>
+      .bg { fill: url(#bg); }
+      .title { font: 700 34px "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif; fill: #0f172a; }
+      .subtitle { font: 400 16px "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif; fill: #475569; }
+      .card { fill: #ffffff; stroke: #d7e3e8; stroke-width: 1.4; rx: 8; filter: url(#shadow); }
+      .bubble { fill: #ecfeff; stroke: #67e8f9; stroke-width: 1.4; rx: 8; }
+      .step { font: 700 18px "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif; fill: #0f172a; }
+      .en { font: 500 12px Arial, sans-serif; fill: #64748b; }
+      .body { font: 500 14px "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif; fill: #334155; }
+      .num { font: 700 18px Arial, sans-serif; fill: #ffffff; }
+      .line { stroke: #0f766e; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+      .blue { fill: #2563eb; }
+      .teal { fill: #0f766e; }
+      .orange { fill: #f97316; }
+      .slate { fill: #475569; }
+      .grid { stroke: #e2e8f0; stroke-width: 1; }
+      .code { font: 600 13px Consolas, "Courier New", monospace; fill: #155e75; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1200" height="520"/>
+  <text class="title" x="60" y="68">从一句话到 jamovi 分析结果</text>
+  <text class="subtitle" x="60" y="100">一个适合科研、教学和数据分析的 MCP 工作流：打开数据、查看变量、编辑单元格、运行统计并保存项目。</text>
+
+  <rect class="bubble" x="70" y="130" width="1060" height="62"/>
+  <text class="body" x="100" y="157">你可以对 MCP 客户端说：</text>
+  <text class="code" x="100" y="181">“打开 survey.csv，查看变量，读取前 10 行，运行 t 检验，然后保存为 analysis.omv。”</text>
+
+  <g transform="translate(60 250)">
+    <rect class="card" width="185" height="150"/>
+    <circle class="blue" cx="34" cy="34" r="18"/>
+    <text class="num" x="29" y="40">1</text>
+    <text class="step" x="24" y="76">打开数据</text>
+    <text class="en" x="24" y="98">jamovi_open</text>
+    <text class="body" x="24" y="128">CSV / Excel / SPSS</text>
+  </g>
+
+  <path class="line" d="M255 325 H315"/>
+
+  <g transform="translate(325 250)">
+    <rect class="card" width="185" height="150"/>
+    <circle class="teal" cx="34" cy="34" r="18"/>
+    <text class="num" x="29" y="40">2</text>
+    <text class="step" x="24" y="76">查看 Schema</text>
+    <text class="en" x="24" y="98">jamovi_get_schema</text>
+    <text class="body" x="24" y="128">列名、类型、行数</text>
+  </g>
+
+  <path class="line" d="M520 325 H580"/>
+
+  <g transform="translate(590 250)">
+    <rect class="card" width="185" height="150"/>
+    <circle class="orange" cx="34" cy="34" r="18"/>
+    <text class="num" x="29" y="40">3</text>
+    <text class="step" x="24" y="76">读写单元格</text>
+    <text class="en" x="24" y="98">读取 / 修改数据</text>
+    <text class="body" x="24" y="128">行优先 JSON 返回</text>
+  </g>
+
+  <path class="line" d="M785 325 H845"/>
+
+  <g transform="translate(855 250)">
+    <rect class="card" width="185" height="150"/>
+    <circle class="blue" cx="34" cy="34" r="18"/>
+    <text class="num" x="29" y="40">4</text>
+    <text class="step" x="24" y="76">运行分析</text>
+    <text class="en" x="24" y="98">jamovi_run_analysis</text>
+    <text class="body" x="24" y="128">t 检验 / 回归 / ANOVA</text>
+  </g>
+
+  <path class="line" d="M1040 325 H1095"/>
+
+  <g transform="translate(960 70)">
+    <rect class="card" width="170" height="110"/>
+    <text class="body" x="22" y="31">结果预览</text>
+    <rect x="26" y="72" width="18" height="26" fill="#93c5fd"/>
+    <rect x="60" y="56" width="18" height="42" fill="#5eead4"/>
+    <rect x="94" y="40" width="18" height="58" fill="#fdba74"/>
+    <path d="M24 100h120" stroke="#94a3b8" stroke-width="2"/>
+    <path d="M26 84c30-30 58-8 100-36" stroke="#2563eb" stroke-width="3" fill="none"/>
+  </g>
+
+  <g transform="translate(1048 250)">
+    <rect class="card" width="125" height="150"/>
+    <circle class="teal" cx="34" cy="34" r="18"/>
+    <text class="num" x="29" y="40">5</text>
+    <text class="step" x="20" y="76">保存</text>
+    <text class="en" x="20" y="98">jamovi_save</text>
+    <text class="body" x="20" y="128">.omv 项目文件</text>
+  </g>
+
+  <g transform="translate(370 428)">
+    <rect class="bubble" width="460" height="52"/>
+    <text class="body" x="24" y="33">适合科研、教学、数据分析和本地 AI 统计工作流。</text>
+  </g>
+</svg>

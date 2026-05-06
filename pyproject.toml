@@ -1,0 +1,27 @@
+[project]
+name = "jamovi-mcp"
+version = "0.1.0"
+description = "MCP server for jamovi statistical analysis software"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = [
+    "mcp>=1.0.0",
+    "protobuf>=5.0.0",
+    "websockets>=12.0",
+    "aiohttp>=3.9",
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+jamovi-mcp = "jamovi_mcp.__main__:main"
+
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = ["lib"]
