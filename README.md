@@ -2,89 +2,87 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-MCP server for controlling [jamovi](https://www.jamovi.org/) from MCP clients. It starts a local jamovi engine process, connects through jamovi's WebSocket/protobuf API, and exposes tools for opening datasets, reading and writing data, running analyses, exporting results, and saving `.omv` files.
+A local stdio MCP server that lets Claude, Cursor, and other MCP clients control [jamovi](https://www.jamovi.org/).
+
+Open datasets, inspect schemas, edit cells, run statistical analyses, export results, and save `.omv` files through a local jamovi engine.
 
 ![jamovi MCP promotional overview](docs/assets/promo-hero.png)
 
-![jamovi MCP architecture overview](docs/assets/hero-architecture.svg)
+## Fastest Setup
 
-## Features
-
-- Start and manage a local jamovi engine process.
-- Open `.omv`, `.csv`, `.sav`, `.xlsx`, `.ods`, `.dta`, `.sas7bdat`, `.por`, and `.txt` files.
-- Inspect dataset schema, including row count, column count, column types, measure types, and levels.
-- Read data in row-major JSON form.
-- Write single cell values, including missing values.
-- List available jamovi analyses and inspect option schemas from installed modules.
-- Run analyses and retrieve/export results.
-- Save the active dataset as an `.omv` file.
-
-## Architecture
-
-```mermaid
-flowchart LR
-    Client["MCP Client"] --> Stdio["stdio MCP transport"]
-    Stdio --> Server["jamovi_mcp.server"]
-
-    Server --> ToolMap["Tool dispatcher"]
-    ToolMap --> FileTools["tools.files"]
-    ToolMap --> DataTools["tools.data"]
-    ToolMap --> AnalysisTools["tools.analysis"]
-
-    FileTools --> Connection["JamoviConnection"]
-    DataTools --> Connection
-    AnalysisTools --> Connection
-
-    Server --> Engine["EngineManager"]
-    Engine --> Config["config.py"]
-    Config --> Discovery["JAMOVI_HOME or Program Files discovery"]
-    Config --> EnvConf["bin/env.conf parsing"]
-    Discovery --> JamoviInstall["Local jamovi installation"]
-    EnvConf --> JamoviInstall
-
-    Engine --> JamoviServer["jamovi.server subprocess"]
-    JamoviInstall --> JamoviServer
-
-    Connection --> HTTP["HTTP open/save endpoints"]
-    Connection --> WS["WebSocket + protobuf coms"]
-    HTTP --> JamoviServer
-    WS --> JamoviServer
-
-    AnalysisTools --> Registry["analyses.py registry"]
-    Registry --> Modules["Resources/modules YAML"]
-    Modules --> JamoviInstall
-```
-
-At startup, `EngineManager` selects a jamovi installation through `config.py`, builds the process environment from jamovi's own `bin/env.conf`, and launches `jamovi.server`. The MCP server then connects to that local engine through `JamoviConnection`. File operations use jamovi's HTTP routes, while dataset and analysis operations use WebSocket messages encoded with the bundled protobuf definitions.
-
-## Quick Start
-
-1. Install jamovi on Windows.
-2. Install Python 3.12 or newer.
-3. Install this package from the repository root:
-
-```powershell
-C:\Python312\python.exe -m pip install -e .
-```
-
-4. Add the MCP server to your MCP client config:
+Copy this into your MCP client config:
 
 ```json
 {
   "mcpServers": {
     "jamovi": {
-      "command": "C:\\Python312\\python.exe",
-      "args": ["-m", "jamovi_mcp"]
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/yjm110517/jamovi-mcp.git",
+        "jamovi-mcp"
+      ]
     }
   }
 }
 ```
 
-5. Restart your MCP client and call `jamovi_open` with an absolute dataset path.
+Restart your MCP client, then call `jamovi_open` with an absolute local data file path.
+
+This is the recommended setup for normal users. You do not need to clone this repository, install a local `lib/` directory, or hardcode a machine-specific Python path.
+
+## Requirements
+
+- Windows
+- jamovi installed locally
+- `uvx` available to the MCP client
+- A Python 3.12+ runtime available through `uvx` or your local Python setup
+
+jamovi itself is required because this MCP starts a local jamovi engine process. Python does not need to be installed in any specific directory.
+
+## jamovi Version Discovery
+
+By default, no `JAMOVI_HOME` configuration is required. The server scans standard Windows install locations such as Program Files and uses the newest valid `jamovi*` installation it finds.
+
+Only set `JAMOVI_HOME` when jamovi is installed in a non-standard location or when you want to pin a specific version:
+
+```json
+{
+  "mcpServers": {
+    "jamovi": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/yjm110517/jamovi-mcp.git",
+        "jamovi-mcp"
+      ],
+      "env": {
+        "JAMOVI_HOME": "C:\\Path\\To\\jamovi"
+      }
+    }
+  }
+}
+```
+
+`JAMOVI_HOME` must point to the jamovi installation directory that contains `Frameworks` and `Resources`.
+
+## Example Workflow
+
+You can ask your MCP client to:
+
+> Open `survey.csv`, show the variables, read the first 10 rows, run a t-test, and save the project as `analysis.omv`.
 
 ![jamovi MCP workflow](docs/assets/workflow.svg)
 
-## Tools
+Typical tool sequence:
+
+1. `jamovi_open`
+2. `jamovi_get_schema`
+3. `jamovi_get_data`
+4. `jamovi_run_analysis`
+5. `jamovi_save`
+
+## MCP Tools
 
 This server exposes 10 MCP tools.
 
@@ -147,19 +145,6 @@ Save the active dataset:
 }
 ```
 
-List available analyses, then inspect one analysis option schema:
-
-```json
-{}
-```
-
-```json
-{
-  "ns": "jmv",
-  "name": "ttestIS"
-}
-```
-
 Run an analysis:
 
 ```json
@@ -174,19 +159,45 @@ Run an analysis:
 }
 ```
 
-## Requirements
+## Architecture
 
-- Windows
-- Python 3.12 or newer
-- jamovi installed locally
+![jamovi MCP architecture overview](docs/assets/hero-architecture.svg)
 
-The project is tested with jamovi `2.6.19.0`, but the startup code is not pinned to that version. It supports:
+```mermaid
+flowchart LR
+    Client["MCP Client"] --> Stdio["stdio MCP transport"]
+    Stdio --> Server["jamovi_mcp.server"]
 
-- explicit `JAMOVI_HOME`
-- automatic discovery of installed `jamovi*` directories under `Program Files`
-- dynamic environment setup from jamovi's own `bin/env.conf`
+    Server --> ToolMap["Tool dispatcher"]
+    ToolMap --> FileTools["tools.files"]
+    ToolMap --> DataTools["tools.data"]
+    ToolMap --> AnalysisTools["tools.analysis"]
 
-If multiple jamovi versions are installed, the newest detected version is selected by default.
+    FileTools --> Connection["JamoviConnection"]
+    DataTools --> Connection
+    AnalysisTools --> Connection
+
+    Server --> Engine["EngineManager"]
+    Engine --> Config["config.py"]
+    Config --> Discovery["JAMOVI_HOME or Program Files discovery"]
+    Config --> EnvConf["bin/env.conf parsing"]
+    Discovery --> JamoviInstall["Local jamovi installation"]
+    EnvConf --> JamoviInstall
+
+    Engine --> JamoviServer["jamovi.server subprocess"]
+    JamoviInstall --> JamoviServer
+
+    Connection --> HTTP["HTTP open/save endpoints"]
+    Connection --> WS["WebSocket + protobuf coms"]
+    HTTP --> JamoviServer
+    WS --> JamoviServer
+
+    AnalysisTools --> Registry["analyses.py registry"]
+    Registry --> Modules["Resources/modules YAML"]
+    Modules --> JamoviInstall
+```
+
+At startup, `EngineManager` selects a jamovi installation through `config.py`, builds the process environment from jamovi's own `bin/env.conf`, and launches `jamovi.server`. The MCP server connects to that local engine through `JamoviConnection`. File operations use jamovi's HTTP routes, while dataset and analysis operations use WebSocket messages encoded with the bundled protobuf definitions.
 
 ## Compatibility
 
@@ -199,133 +210,31 @@ Verified locally:
 Designed compatibility:
 
 - Any jamovi installation with the same `Frameworks`, `Resources`, `bin/env.conf`, HTTP routes, WebSocket API, and protobuf message contract.
-- Explicit version selection through `JAMOVI_HOME`.
+- Optional version selection through `JAMOVI_HOME`.
 - Automatic newest-version selection when multiple `jamovi*` directories are installed under standard Program Files locations.
 
 Known limitation:
 
 - If a future jamovi release changes `jamovi.proto`, the WebSocket request types, or the HTTP open/save routes, this MCP may need an adapter update and regenerated protobuf code.
 
-## Installation
-
-From the repository root:
-
-```powershell
-C:\Python312\python.exe -m pip install -e .
-```
-
-For local development:
-
-```powershell
-C:\Python312\python.exe -m pip install -e .
-C:\Python312\python.exe -m pip install pytest
-```
-
-Do not commit a local `lib/` dependency target directory. Dependencies should be installed from `pyproject.toml`.
-
-## jamovi Selection
-
-By default, the server scans standard Windows install locations and uses the newest valid jamovi installation.
-
-To force a specific jamovi version:
-
-```powershell
-$env:JAMOVI_HOME = "C:\Program Files\jamovi 2.6.19.0"
-C:\Python312\python.exe -m jamovi_mcp
-```
-
-`JAMOVI_HOME` must point to the jamovi install directory that contains `Frameworks` and `Resources`.
-
-## MCP Client Configuration
-
-Example MCP server config:
-
-```json
-{
-  "mcpServers": {
-    "jamovi": {
-      "command": "C:\\Python312\\python.exe",
-      "args": ["-m", "jamovi_mcp"],
-      "env": {
-        "JAMOVI_HOME": "C:\\Program Files\\jamovi 2.6.19.0"
-      }
-    }
-  }
-}
-```
-
-If you want automatic jamovi version discovery, omit `JAMOVI_HOME`:
-
-```json
-{
-  "mcpServers": {
-    "jamovi": {
-      "command": "C:\\Python312\\python.exe",
-      "args": ["-m", "jamovi_mcp"]
-    }
-  }
-}
-```
-
-Use Python 3.12 or newer. Running with an older default `python` will fail with a clear startup error.
-
-## Running Tests
-
-```powershell
-C:\Python312\python.exe -m pytest -q
-```
-
-The test suite covers:
-
-- jamovi install discovery and environment parsing
-- HTTP save endpoint handling
-- data block column-major to row-major conversion
-- `set_data` request construction
-
-## Development
-
-Install in editable mode:
-
-```powershell
-C:\Python312\python.exe -m pip install -e .
-```
-
-Run tests:
-
-```powershell
-C:\Python312\python.exe -m pytest -q
-```
-
-Start the MCP server directly:
-
-```powershell
-C:\Python312\python.exe -m jamovi_mcp
-```
-
-Important source areas:
-
-- `src/jamovi_mcp/server.py`: MCP server and tool registration.
-- `src/jamovi_mcp/engine.py`: jamovi engine subprocess lifecycle.
-- `src/jamovi_mcp/config.py`: jamovi install discovery and environment setup.
-- `src/jamovi_mcp/connection.py`: HTTP, WebSocket, and protobuf communication.
-- `src/jamovi_mcp/tools/`: MCP tool implementations.
-- `src/jamovi_mcp/analyses.py`: analysis registry built from jamovi module YAML files.
-- `tests/`: unit tests for data conversion, save handling, config, and engine env setup.
-
-Do not commit `lib/` or other local dependency target directories. Install dependencies through `pyproject.toml`.
-
 ## Troubleshooting
+
+### `uvx` is not found
+
+Install `uv` so your MCP client can run `uvx`, then restart the MCP client. If you do not want to use `uvx`, use the development install below and configure the installed `jamovi-mcp` command instead.
 
 ### `jamovi-mcp requires Python 3.12 or newer`
 
-Your MCP client is probably using an older default `python`. Set the MCP command to the full Python 3.12 path:
+Your MCP client is using an older Python runtime. With `uvx`, make sure `uv` can use Python 3.12+. If you manage Python yourself, point the MCP command to a Python 3.12+ executable:
 
 ```json
 {
-  "command": "C:\\Python312\\python.exe",
+  "command": "C:\\Path\\To\\Python\\python.exe",
   "args": ["-m", "jamovi_mcp"]
 }
 ```
+
+This is an advanced fallback. It is not the recommended setup and the path will differ on every computer.
 
 ### `Invalid JAMOVI_HOME`
 
@@ -333,8 +242,12 @@ Your MCP client is probably using an older default `python`. Set the MCP command
 
 Example:
 
-```powershell
-$env:JAMOVI_HOME = "C:\Program Files\jamovi 2.6.19.0"
+```json
+{
+  "env": {
+    "JAMOVI_HOME": "C:\\Path\\To\\jamovi"
+  }
+}
 ```
 
 ### jamovi is installed but not detected
@@ -348,6 +261,46 @@ Use absolute Windows paths and make sure the user running the MCP client has per
 ### Analysis tools return unexpected results
 
 First call `jamovi_list_analyses`, then `jamovi_get_analysis_options` for the target analysis. jamovi analysis option schemas are module-specific and can differ between versions or installed modules.
+
+## Development Install
+
+Normal users should use the `uvx` MCP config above. Clone the repository only if you want to develop or test the code locally.
+
+```powershell
+git clone https://github.com/yjm110517/jamovi-mcp.git
+cd jamovi-mcp
+py -3.12 -m pip install -e .
+```
+
+If your system does not have the Windows Python launcher, use any Python 3.12+ executable instead:
+
+```powershell
+python -m pip install -e .
+```
+
+Run tests:
+
+```powershell
+py -3.12 -m pytest -q
+```
+
+Start the MCP server directly:
+
+```powershell
+py -3.12 -m jamovi_mcp
+```
+
+Important source areas:
+
+- `src/jamovi_mcp/server.py`: MCP server and tool registration.
+- `src/jamovi_mcp/engine.py`: jamovi engine subprocess lifecycle.
+- `src/jamovi_mcp/config.py`: jamovi install discovery and environment setup.
+- `src/jamovi_mcp/connection.py`: HTTP, WebSocket, and protobuf communication.
+- `src/jamovi_mcp/tools/`: MCP tool implementations.
+- `src/jamovi_mcp/analyses.py`: analysis registry built from jamovi module YAML files.
+- `tests/`: unit tests for data conversion, save handling, config, and engine env setup.
+
+Do not commit `lib/` or other local dependency target directories. Install dependencies through `pyproject.toml`.
 
 ## Security Notes
 
@@ -378,9 +331,11 @@ For compatibility work, include the jamovi version, Windows version, and Python 
 Files that should be committed:
 
 - `README.md`
+- `README.zh-CN.md`
 - `LICENSE`
 - `.gitignore`
 - `pyproject.toml`
+- `docs/`
 - `src/`
 - `tests/`
 
