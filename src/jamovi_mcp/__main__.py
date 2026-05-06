@@ -10,7 +10,8 @@ from pathlib import Path
 if sys.version_info < (3, 12):
     sys.stderr.write(
         "jamovi-mcp requires Python 3.12 or newer. "
-        r"Use C:\Python312\python.exe -m jamovi_mcp."
+        "Use a Python 3.12+ runtime, or run through uvx as documented "
+        "in the README."
         "\n"
     )
     raise SystemExit(1)
