@@ -38,6 +38,14 @@ This is the recommended setup for normal users. You do not need to clone this re
 - `uvx` available to the MCP client
 - A Python 3.12+ runtime available through `uvx` or your local Python setup
 
+`uvx` is part of [uv](https://docs.astral.sh/uv/), a Python tool runner. In this README it is used so your MCP client can download and run `jamovi-mcp` from GitHub without cloning the repository or hardcoding a local Python path.
+
+Install `uv` on Windows:
+
+```powershell
+winget install astral-sh.uv
+```
+
 jamovi itself is required because this MCP starts a local jamovi engine process. Python does not need to be installed in any specific directory.
 
 ## jamovi Version Discovery
@@ -221,7 +229,13 @@ Known limitation:
 
 ### `uvx` is not found
 
-Install `uv` so your MCP client can run `uvx`, then restart the MCP client. If you do not want to use `uvx`, use the development install below and configure the installed `jamovi-mcp` command instead.
+Install `uv` so your MCP client can run `uvx`, then restart the MCP client:
+
+```powershell
+winget install astral-sh.uv
+```
+
+`uvx` means "run a Python tool through uv". If you do not want to use `uvx`, use the development install below and configure the installed `jamovi-mcp` command instead.
 
 ### `jamovi-mcp requires Python 3.12 or newer`
 
