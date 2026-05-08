@@ -7,8 +7,6 @@ import os
 import re
 from pathlib import Path
 
-DEFAULT_JAMOVI_HOME = Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "jamovi"
-
 
 class ConfigError(RuntimeError):
     """Raised when the local jamovi installation cannot be used."""
@@ -79,8 +77,8 @@ def is_jamovi_home(path: Path) -> bool:
 def find_jamovi_home() -> Path:
     """Find the jamovi installation to use.
 
-    JAMOVI_HOME wins when set. Otherwise, choose the highest installed jamovi
-    version under the standard Program Files locations.
+    JAMOVI_HOME wins when set. Otherwise, scan Program Files and
+    pick the newest valid install.
     """
     env_home = os.environ.get("JAMOVI_HOME")
     if env_home:
@@ -88,7 +86,12 @@ def find_jamovi_home() -> Path:
 
     candidates = [path for path in _candidate_jamovi_homes() if is_jamovi_home(path)]
     if not candidates:
-        return DEFAULT_JAMOVI_HOME
+        raise ConfigError(
+            "jamovi was not found in any standard location.\n"
+            "Set the JAMOVI_HOME environment variable in your MCP client config:\n"
+            '  "env": {"JAMOVI_HOME": "C:\\\\Your\\\\jamovi\\\\path"}\n'
+            "The path must contain Frameworks and Resources directories."
+        )
 
     return sorted(candidates, key=jamovi_version_key, reverse=True)[0]
 
@@ -111,9 +114,10 @@ def validate_jamovi_home(jamovi_home: Path) -> Path:
 
     details = ", ".join(missing) if missing else "not a directory"
     raise ConfigError(
-        f"Invalid JAMOVI_HOME: {path} ({details}). "
+        f"Invalid JAMOVI_HOME: {path} ({details}).\n"
         "Set JAMOVI_HOME to the jamovi install directory that contains "
-        "Frameworks and Resources."
+        "Frameworks and Resources:\n"
+        '  "env": {"JAMOVI_HOME": "C:\\\\Your\\\\jamovi\\\\Install\\\\Path"}'
     )
 
 
@@ -182,5 +186,4 @@ def read_jamovi_env(jamovi_home: Path) -> dict[str, str]:
     return env
 
 
-JAMOVI_HOME = find_jamovi_home()
 JAMOVI_PORT: int = int(os.environ.get("JAMOVI_PORT", "0"))

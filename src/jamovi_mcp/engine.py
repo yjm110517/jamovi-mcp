@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .config import (
     ConfigError,
-    JAMOVI_HOME,
+    find_jamovi_home,
     read_jamovi_env,
     validate_jamovi_home,
 )
@@ -30,7 +30,7 @@ class EngineManager:
     def __init__(self, port: int = 0, jamovi_home: Path | None = None) -> None:
         self._port = port
         try:
-            self._jamovi_home = validate_jamovi_home(jamovi_home or JAMOVI_HOME)
+            self._jamovi_home = validate_jamovi_home(jamovi_home or find_jamovi_home())
         except ConfigError as exc:
             raise EngineError(str(exc)) from exc
         self._bin = self._jamovi_home / "bin"

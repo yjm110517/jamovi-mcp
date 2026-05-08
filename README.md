@@ -60,9 +60,11 @@ jamovi itself is required because this MCP starts a local jamovi engine process.
 
 ## jamovi Version Discovery
 
-By default, no `JAMOVI_HOME` configuration is required. The server scans standard Windows install locations such as Program Files and uses the newest valid `jamovi*` installation it finds.
+By default, no configuration is required. The server scans `C:\Program Files\jamovi*` and `C:\Program Files (x86)\jamovi*` and picks the newest valid installation.
 
-Only set `JAMOVI_HOME` when jamovi is installed in a non-standard location or when you want to pin a specific version. The path below is only an example; replace it with the real jamovi install directory on your computer:
+### jamovi installed in a non-standard location
+
+If jamovi is installed on another drive or outside Program Files, set `JAMOVI_HOME` in the MCP config `env` block:
 
 ```json
 {
@@ -75,14 +77,19 @@ Only set `JAMOVI_HOME` when jamovi is installed in a non-standard location or wh
         "jamovi-mcp"
       ],
       "env": {
-        "JAMOVI_HOME": "C:\\Your\\jamovi\\Install\\Path"
+        "JAMOVI_HOME": "D:\\MyTools\\jamovi"
       }
     }
   }
 }
 ```
 
-`JAMOVI_HOME` must point to the jamovi installation directory that contains `Frameworks` and `Resources`. If you are not sure what the path is, omit `JAMOVI_HOME` and let the MCP server auto-detect jamovi.
+`JAMOVI_HOME` must point to the directory containing `Frameworks` and `Resources`. To verify you have the right path, run the directory listing and confirm you see both folders:
+
+```powershell
+dir "D:\MyTools\jamovi"
+# Should show: Frameworks\  Resources\  bin\  ...
+```
 
 ## Example Workflow
 

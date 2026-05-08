@@ -60,9 +60,11 @@ jamovi 是必要条件，因为这个 MCP 会启动本地 jamovi engine。Python
 
 ## jamovi 版本发现
 
-默认情况下不需要配置 `JAMOVI_HOME`。服务器会扫描 Windows 标准安装位置，例如 Program Files，并使用检测到的最新有效 `jamovi*` 安装目录。
+默认情况下不需要配置。服务器会扫描 `C:\Program Files\jamovi*` 和 `C:\Program Files (x86)\jamovi*` 并选择最新有效安装。
 
-只有在 jamovi 安装到非标准位置，或者你想固定使用某个 jamovi 版本时，才需要设置 `JAMOVI_HOME`。下面的路径只是示例，必须换成你自己电脑上的真实 jamovi 安装目录：
+### jamovi 安装在非标准位置
+
+如果 jamovi 安装在其他盘符或 Program Files 以外的目录，在 MCP 配置的 `env` 中设置 `JAMOVI_HOME`：
 
 ```json
 {
@@ -75,14 +77,19 @@ jamovi 是必要条件，因为这个 MCP 会启动本地 jamovi engine。Python
         "jamovi-mcp"
       ],
       "env": {
-        "JAMOVI_HOME": "C:\\Your\\jamovi\\Install\\Path"
+        "JAMOVI_HOME": "D:\\MyTools\\jamovi"
       }
     }
   }
 }
 ```
 
-`JAMOVI_HOME` 必须指向包含 `Frameworks` 和 `Resources` 的 jamovi 安装目录。如果你不确定这个路径，就先不要配置 `JAMOVI_HOME`，让 MCP 自动发现。
+`JAMOVI_HOME` 必须指向包含 `Frameworks` 和 `Resources` 的目录。验证方式：
+
+```powershell
+dir "D:\MyTools\jamovi"
+# 应显示: Frameworks\  Resources\  bin\  ...
+```
 
 ## 示例工作流
 
