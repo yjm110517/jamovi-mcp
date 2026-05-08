@@ -43,9 +43,11 @@ def test_find_jamovi_home_selects_highest_installed_version(
     new_home = _make_install(tmp_path, "jamovi 99.0.0.0", "99.0.0.0")
 
     monkeypatch.delenv("JAMOVI_HOME", raising=False)
-    monkeypatch.setenv("ProgramFiles", str(tmp_path))
-    monkeypatch.setenv("ProgramW6432", str(tmp_path))
-    monkeypatch.setenv("ProgramFiles(x86)", str(tmp_path))
+    from jamovi_mcp import config as _config
+    monkeypatch.setattr(
+        _config, "_drive_roots",
+        lambda: [tmp_path],
+    )
 
     assert find_jamovi_home() == new_home
     assert jamovi_version_key(new_home) > jamovi_version_key(old_home)
