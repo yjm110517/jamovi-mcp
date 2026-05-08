@@ -5,6 +5,7 @@ from __future__ import annotations
 import configparser
 import os
 import re
+import string
 from pathlib import Path
 
 
@@ -24,22 +25,68 @@ def _dedupe_paths(paths: list[Path]) -> list[Path]:
     return result
 
 
-def _program_files_roots() -> list[Path]:
+def _drive_roots() -> list[Path]:
+    """Return fixed-drive roots (C:, D:, ...) that exist."""
     roots: list[Path] = []
-    for name in ("ProgramFiles", "ProgramW6432", "ProgramFiles(x86)"):
-        value = os.environ.get(name)
-        if value:
-            roots.append(Path(value))
-    roots.extend([Path(r"C:\Program Files"), Path(r"C:\Program Files (x86)")])
-    return _dedupe_paths(roots)
+    # Only scan fixed (hard) drives, skip network & removable
+    import ctypes
+    try:
+        drives = ctypes.windll.kernel32.GetLogicalDrives()
+        for letter in string.ascii_uppercase:
+            if drives & (1 << (ord(letter) - ord('A'))):
+                drive_type = ctypes.windll.kernel32.GetDriveTypeW(f"{letter}:\\")
+                if drive_type == 3:  # DRIVE_FIXED
+                    path = Path(f"{letter}:\\")
+                    if path.exists():
+                        roots.append(path)
+    except Exception:
+        # Fallback: try common drive letters
+        for letter in "CDEFGH":
+            path = Path(f"{letter}:\\")
+            if path.exists():
+                roots.append(path)
+        # Always include C:
+        c = Path("C:\\")
+        if c.exists() and c not in roots:
+            roots.append(c)
+    return roots
+
 
 
 def _candidate_jamovi_homes() -> list[Path]:
+    """Find jamovi install directories across all known locations."""
     candidates: list[Path] = []
-    for root in _program_files_roots():
-        if not root.exists():
+    # 1. Program Files on all fixed drives
+    for drive in _drive_roots():
+        for sub in ("Program Files", "Program Files (x86)"):
+            root = drive / sub
+            if not root.exists():
+                continue
+            try:
+                candidates.extend(
+                    path for path in root.glob("jamovi*") if path.is_dir()
+                )
+            except (OSError, PermissionError):
+                continue
+    # 2. Drive roots — catches D:\jamovi etc.
+    for drive in _drive_roots():
+        try:
+            candidates.extend(
+                path for path in drive.glob("jamovi*") if path.is_dir()
+            )
+        except (OSError, PermissionError):
             continue
-        candidates.extend(path for path in root.glob("jamovi*") if path.is_dir())
+    # 3. One level below drive root — catches D:\Tools\jamovi etc.
+    for drive in _drive_roots():
+        try:
+            for parent in drive.iterdir():
+                if not parent.is_dir():
+                    continue
+                candidates.extend(
+                    path for path in parent.glob("jamovi*") if path.is_dir()
+                )
+        except (OSError, PermissionError):
+            continue
     return _dedupe_paths(candidates)
 
 
@@ -87,8 +134,8 @@ def find_jamovi_home() -> Path:
     candidates = [path for path in _candidate_jamovi_homes() if is_jamovi_home(path)]
     if not candidates:
         raise ConfigError(
-            "jamovi was not found in any standard location.\n"
-            "Set the JAMOVI_HOME environment variable in your MCP client config:\n"
+            "jamovi was not found on any drive.\n"
+            "Set JAMOVI_HOME in your MCP client config env block:\n"
             '  "env": {"JAMOVI_HOME": "C:\\\\Your\\\\jamovi\\\\path"}\n'
             "The path must contain Frameworks and Resources directories."
         )

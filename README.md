@@ -60,11 +60,17 @@ jamovi itself is required because this MCP starts a local jamovi engine process.
 
 ## jamovi Version Discovery
 
-By default, no configuration is required. The server scans `C:\Program Files\jamovi*` and `C:\Program Files (x86)\jamovi*` and picks the newest valid installation.
+No configuration required in most cases. The server scans all fixed drives:
 
-### jamovi installed in a non-standard location
+1. `*\Program Files\jamovi*` and `*\Program Files (x86)\jamovi*` on every drive
+2. `*\jamovi*` at each drive root (e.g. `D:\jamovi 2.6`)
+3. `*\*\jamovi*` one level below each drive root (e.g. `D:\Tools\jamovi`)
 
-If jamovi is installed on another drive or outside Program Files, set `JAMOVI_HOME` in the MCP config `env` block:
+The newest valid installation is selected automatically.
+
+### When auto-discovery cannot find jamovi
+
+If jamovi is installed deep inside a custom folder tree, set `JAMOVI_HOME` in the MCP config:
 
 ```json
 {

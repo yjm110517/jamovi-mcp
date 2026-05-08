@@ -60,11 +60,17 @@ jamovi 是必要条件，因为这个 MCP 会启动本地 jamovi engine。Python
 
 ## jamovi 版本发现
 
-默认情况下不需要配置。服务器会扫描 `C:\Program Files\jamovi*` 和 `C:\Program Files (x86)\jamovi*` 并选择最新有效安装。
+大多数情况下无需配置。服务器会扫描所有固定盘符：
 
-### jamovi 安装在非标准位置
+1. 每个盘符下的 `*\Program Files\jamovi*` 和 `*\Program Files (x86)\jamovi*`
+2. 每个盘符根目录下的 `*\jamovi*`（例如 `D:\jamovi 2.6`）
+3. 每个盘符一级子目录下的 `*\*\jamovi*`（例如 `D:\Tools\jamovi`）
 
-如果 jamovi 安装在其他盘符或 Program Files 以外的目录，在 MCP 配置的 `env` 中设置 `JAMOVI_HOME`：
+自动选择最新有效安装。
+
+### 自动发现找不到 jamovi 时
+
+如果 jamovi 安装很深的自定义目录中，在 MCP 配置中设置 `JAMOVI_HOME`：
 
 ```json
 {
