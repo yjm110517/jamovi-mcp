@@ -10,7 +10,7 @@
 
 ## 最快部署
 
-把下面这段配置复制到你的 MCP 客户端配置里：
+把下面这段配置复制到你的 MCP 客户端配置里。Claude Code、Claude Desktop、Cursor 这类 stdio MCP 客户端通常都使用这种 `command` + `args` 结构：
 
 ```json
 {
@@ -27,7 +27,15 @@
 }
 ```
 
-重启 MCP 客户端，然后调用 `jamovi_open`，传入一个本地数据文件的 Windows 绝对路径。
+如果你用的是 Claude Code，不要额外添加 `"type": "stdio"`，也不要把示例里的 `JAMOVI_HOME` 占位路径复制进去。保持上面这段最小配置即可。
+
+可选自检：
+
+```powershell
+uvx --from git+https://github.com/yjm110517/jamovi-mcp.git -- jamovi-mcp --check
+```
+
+看到 `jamovi: ...` 和 `MCP transport: stdio` 后，重启 MCP 客户端，然后调用 `jamovi_open`，传入一个本地数据文件的 Windows 绝对路径。
 
 这是普通用户推荐的部署方式。你不需要 clone 仓库，不需要手动安装 `lib/`，也不需要把 Python 写死到某台电脑上的本机路径。
 
@@ -36,7 +44,7 @@
 - Windows
 - 本机已安装 jamovi
 - MCP 客户端能调用 `uvx`
-- `uvx` 或你的本地 Python 环境能使用 Python 3.12+
+- `uvx` 或你的本地 Python 环境能使用 Python 3.10+
 
 `uvx` 是 [uv](https://docs.astral.sh/uv/) 提供的 Python 工具运行命令。这里使用 `uvx` 的目的，是让 MCP 客户端可以直接从 GitHub 下载并运行 `jamovi-mcp`，不用 clone 仓库，也不用写死本机 Python 路径。
 
@@ -46,13 +54,15 @@ Windows 上可以这样安装 `uv`：
 winget install astral-sh.uv
 ```
 
+安装后如果 MCP 客户端仍然提示找不到 `uvx`，请重启 MCP 客户端，必要时重启终端或系统，让新的 PATH 生效。
+
 jamovi 是必要条件，因为这个 MCP 会启动本地 jamovi engine。Python 不需要安装在任何固定目录。
 
 ## jamovi 版本发现
 
 默认情况下不需要配置 `JAMOVI_HOME`。服务器会扫描 Windows 标准安装位置，例如 Program Files，并使用检测到的最新有效 `jamovi*` 安装目录。
 
-只有在 jamovi 安装到非标准位置，或者你想固定使用某个 jamovi 版本时，才需要设置 `JAMOVI_HOME`：
+只有在 jamovi 安装到非标准位置，或者你想固定使用某个 jamovi 版本时，才需要设置 `JAMOVI_HOME`。下面的路径只是示例，必须换成你自己电脑上的真实 jamovi 安装目录：
 
 ```json
 {
@@ -65,14 +75,14 @@ jamovi 是必要条件，因为这个 MCP 会启动本地 jamovi engine。Python
         "jamovi-mcp"
       ],
       "env": {
-        "JAMOVI_HOME": "C:\\Path\\To\\jamovi"
+        "JAMOVI_HOME": "C:\\Your\\jamovi\\Install\\Path"
       }
     }
   }
 }
 ```
 
-`JAMOVI_HOME` 必须指向包含 `Frameworks` 和 `Resources` 的 jamovi 安装目录。
+`JAMOVI_HOME` 必须指向包含 `Frameworks` 和 `Resources` 的 jamovi 安装目录。如果你不确定这个路径，就先不要配置 `JAMOVI_HOME`，让 MCP 自动发现。
 
 ## 示例工作流
 
@@ -212,7 +222,7 @@ flowchart LR
 本机已验证：
 
 - Windows
-- Python 3.12
+- Python 3.10 - 3.12
 - jamovi `2.6.19.0`
 
 设计上支持：
@@ -237,9 +247,9 @@ winget install astral-sh.uv
 
 `uvx` 的意思是“通过 uv 临时运行一个 Python 工具”。如果你不想使用 `uvx`，可以使用下面的开发安装方式，并在 MCP 客户端中配置已安装的 `jamovi-mcp` 命令。
 
-### `jamovi-mcp requires Python 3.12 or newer`
+### `jamovi-mcp requires Python 3.10 or newer`
 
-你的 MCP 客户端正在使用较旧的 Python 运行时。使用 `uvx` 时，请确认 `uv` 能使用 Python 3.12+。如果你自己管理 Python，可以把 MCP command 指向某个 Python 3.12+ 可执行文件：
+你的 MCP 客户端正在使用较旧的 Python 运行时。使用 `uvx` 时，uv 会自动提供正确的 Python 版本——无需手动配置。如果你自己管理 Python，可以把 MCP command 指向某个 Python 3.10+ 可执行文件：
 
 ```json
 {
@@ -259,14 +269,37 @@ winget install astral-sh.uv
 ```json
 {
   "env": {
-    "JAMOVI_HOME": "C:\\Path\\To\\jamovi"
+    "JAMOVI_HOME": "C:\\Your\\jamovi\\Install\\Path"
   }
 }
 ```
 
+不要把 `C:\\Your\\jamovi\\Install\\Path` 原样复制到配置里。它只是占位符，需要替换成真实路径；如果 jamovi 安装在标准 Program Files 位置，直接删除整个 `env` 配置即可。
+
 ### 已安装 jamovi 但没有被检测到
 
 请在 MCP 客户端配置中显式设置 `JAMOVI_HOME`。测试特定 jamovi 版本时也建议这样做。
+
+### Claude Code 提示 MCP 配置 schema 错误
+
+先使用最小配置，只保留 `command` 和 `args`：
+
+```json
+{
+  "mcpServers": {
+    "jamovi": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/yjm110517/jamovi-mcp.git",
+        "jamovi-mcp"
+      ]
+    }
+  }
+}
+```
+
+常见原因是配置里多写了当前客户端不支持的字段，或者把 `JAMOVI_HOME` 的占位路径原样复制进去了。先让最小配置通过，再按需添加真实的 `env`。
 
 ### 打开或保存文件失败
 
@@ -283,10 +316,10 @@ winget install astral-sh.uv
 ```powershell
 git clone https://github.com/yjm110517/jamovi-mcp.git
 cd jamovi-mcp
-py -3.12 -m pip install -e .
+py -3.10 -m pip install -e .
 ```
 
-如果你的系统没有 Windows Python launcher，可以使用任意 Python 3.12+ 可执行文件：
+如果你的系统没有 Windows Python launcher，可以使用任意 Python 3.10+ 可执行文件：
 
 ```powershell
 python -m pip install -e .
@@ -295,13 +328,13 @@ python -m pip install -e .
 运行测试：
 
 ```powershell
-py -3.12 -m pytest -q
+py -3.10 -m pytest -q
 ```
 
 直接启动 MCP server：
 
 ```powershell
-py -3.12 -m jamovi_mcp
+py -3.10 -m jamovi_mcp
 ```
 
 关键源码位置：

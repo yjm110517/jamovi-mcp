@@ -10,7 +10,7 @@ Open datasets, inspect schemas, edit cells, run statistical analyses, export res
 
 ## Fastest Setup
 
-Copy this into your MCP client config:
+Copy this into your MCP client config. Claude Code, Claude Desktop, Cursor, and most stdio MCP clients use this `command` + `args` shape:
 
 ```json
 {
@@ -27,7 +27,15 @@ Copy this into your MCP client config:
 }
 ```
 
-Restart your MCP client, then call `jamovi_open` with an absolute local data file path.
+If you use Claude Code, do not add `"type": "stdio"` unless your client documentation explicitly requires it, and do not copy a placeholder `JAMOVI_HOME` value into your config. Start with the minimal config above.
+
+Optional check:
+
+```powershell
+uvx --from git+https://github.com/yjm110517/jamovi-mcp.git -- jamovi-mcp --check
+```
+
+After it prints `jamovi: ...` and `MCP transport: stdio`, restart your MCP client, then call `jamovi_open` with an absolute local data file path.
 
 This is the recommended setup for normal users. You do not need to clone this repository, install a local `lib/` directory, or hardcode a machine-specific Python path.
 
@@ -36,7 +44,7 @@ This is the recommended setup for normal users. You do not need to clone this re
 - Windows
 - jamovi installed locally
 - `uvx` available to the MCP client
-- A Python 3.12+ runtime available through `uvx` or your local Python setup
+- A Python 3.10+ runtime. `uvx` provisions this automatically — no manual Python install needed.
 
 `uvx` is part of [uv](https://docs.astral.sh/uv/), a Python tool runner. In this README it is used so your MCP client can download and run `jamovi-mcp` from GitHub without cloning the repository or hardcoding a local Python path.
 
@@ -46,13 +54,15 @@ Install `uv` on Windows:
 winget install astral-sh.uv
 ```
 
+If your MCP client still cannot find `uvx` after installation, restart the MCP client and, if needed, restart the terminal or Windows session so PATH changes are visible.
+
 jamovi itself is required because this MCP starts a local jamovi engine process. Python does not need to be installed in any specific directory.
 
 ## jamovi Version Discovery
 
 By default, no `JAMOVI_HOME` configuration is required. The server scans standard Windows install locations such as Program Files and uses the newest valid `jamovi*` installation it finds.
 
-Only set `JAMOVI_HOME` when jamovi is installed in a non-standard location or when you want to pin a specific version:
+Only set `JAMOVI_HOME` when jamovi is installed in a non-standard location or when you want to pin a specific version. The path below is only an example; replace it with the real jamovi install directory on your computer:
 
 ```json
 {
@@ -65,14 +75,14 @@ Only set `JAMOVI_HOME` when jamovi is installed in a non-standard location or wh
         "jamovi-mcp"
       ],
       "env": {
-        "JAMOVI_HOME": "C:\\Path\\To\\jamovi"
+        "JAMOVI_HOME": "C:\\Your\\jamovi\\Install\\Path"
       }
     }
   }
 }
 ```
 
-`JAMOVI_HOME` must point to the jamovi installation directory that contains `Frameworks` and `Resources`.
+`JAMOVI_HOME` must point to the jamovi installation directory that contains `Frameworks` and `Resources`. If you are not sure what the path is, omit `JAMOVI_HOME` and let the MCP server auto-detect jamovi.
 
 ## Example Workflow
 
@@ -212,12 +222,12 @@ At startup, `EngineManager` selects a jamovi installation through `config.py`, b
 Verified locally:
 
 - Windows
-- Python 3.12
+- Python 3.10 - 3.12
 - jamovi `2.6.19.0`
 
 Designed compatibility:
 
-- Any jamovi installation with the same `Frameworks`, `Resources`, `bin/env.conf`, HTTP routes, WebSocket API, and protobuf message contract.
+- Any Python 3.10+ runtime (the minimum is enforced by the MCP SDK).
 - Optional version selection through `JAMOVI_HOME`.
 - Automatic newest-version selection when multiple `jamovi*` directories are installed under standard Program Files locations.
 
@@ -237,9 +247,9 @@ winget install astral-sh.uv
 
 `uvx` means "run a Python tool through uv". If you do not want to use `uvx`, use the development install below and configure the installed `jamovi-mcp` command instead.
 
-### `jamovi-mcp requires Python 3.12 or newer`
+### `jamovi-mcp requires Python 3.10 or newer`
 
-Your MCP client is using an older Python runtime. With `uvx`, make sure `uv` can use Python 3.12+. If you manage Python yourself, point the MCP command to a Python 3.12+ executable:
+Your MCP client is using an older Python runtime. With `uvx`, uv automatically provisions the correct Python version — no manual setup required. If you manage Python yourself, point the MCP command to a Python 3.10+ executable:
 
 ```json
 {
@@ -259,14 +269,37 @@ Example:
 ```json
 {
   "env": {
-    "JAMOVI_HOME": "C:\\Path\\To\\jamovi"
+    "JAMOVI_HOME": "C:\\Your\\jamovi\\Install\\Path"
   }
 }
 ```
 
+Do not copy `C:\\Your\\jamovi\\Install\\Path` literally. It is a placeholder. Replace it with a real path, or remove the entire `env` block when jamovi is installed under a standard Program Files location.
+
 ### jamovi is installed but not detected
 
 Set `JAMOVI_HOME` explicitly in the MCP client config. This is also recommended when testing a specific jamovi version.
+
+### Claude Code reports an MCP config schema error
+
+Start with the minimal config and keep only `command` and `args`:
+
+```json
+{
+  "mcpServers": {
+    "jamovi": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/yjm110517/jamovi-mcp.git",
+        "jamovi-mcp"
+      ]
+    }
+  }
+}
+```
+
+The most common causes are extra fields unsupported by the current client, or copying a placeholder `JAMOVI_HOME` value into the config. Get the minimal config working first, then add a real `env` block only if needed.
 
 ### File open or save fails
 
@@ -283,10 +316,10 @@ Normal users should use the `uvx` MCP config above. Clone the repository only if
 ```powershell
 git clone https://github.com/yjm110517/jamovi-mcp.git
 cd jamovi-mcp
-py -3.12 -m pip install -e .
+py -3.10 -m pip install -e .
 ```
 
-If your system does not have the Windows Python launcher, use any Python 3.12+ executable instead:
+If your system does not have the Windows Python launcher, use any Python 3.10+ executable instead:
 
 ```powershell
 python -m pip install -e .
@@ -295,13 +328,13 @@ python -m pip install -e .
 Run tests:
 
 ```powershell
-py -3.12 -m pytest -q
+py -3.10 -m pytest -q
 ```
 
 Start the MCP server directly:
 
 ```powershell
-py -3.12 -m jamovi_mcp
+py -3.10 -m jamovi_mcp
 ```
 
 Important source areas:
